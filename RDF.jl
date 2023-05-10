@@ -1,3 +1,5 @@
+using Plots
+
 include("routines.jl")
 
 """
@@ -11,7 +13,7 @@ RMax = 100 # maximal radial distance
 DeltaR = 0.2 # bin width
 NBins = 1000 # number of equally spaced bins
 ParticleFile = "test/test.dat"
-SimuName = "test/test.dat"
+SimuName = ParticleFile[1:end-4]
 
 function readPartCoor(PartFile)
 	# open the .txt file and read in all datalines
@@ -31,6 +33,13 @@ function readPartCoor(PartFile)
 	end
     
 	return Particles
+end
+
+function plotRDF(r, Gr, SimuName)
+    plot(r, Gr, color="green", label="", xlabel="r", ylabel="g(r)")
+    plot!(r, ones(length(r)), color="black", linestyle=:dash, linewidth=1, label="")
+    savefig(SimuName * "_Gr.pdf")
+    return true
 end
 
 function saveRDFdata(rList, Gr, DeltaR, SimuName, FilePath)
@@ -66,6 +75,9 @@ function ProcessPartCoor(PartFile, rList, DeltaR, SimuName)
 
 	# save the RDF data to a file
 	saveRDFdata(rList, Gr, DeltaR, SimuName, PartFile)
+
+	# plot RDF
+	plotRDF(rList, Gr, SimuName)
 
 	return true
 end
