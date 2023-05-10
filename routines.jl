@@ -1,4 +1,5 @@
 using LinearAlgebra
+using ProgressMeter
 pi = Base.MathConstants.pi
 
 """
@@ -193,7 +194,7 @@ function RDF_AnalyticNorm(Particles::Matrix{Float64}, r, dr)
     MeanDensity = length(Particles[:,1]) / (Lx * Ly * Lz)
 
     # use every particle as the center once
-    for CentralP in 1:length(Particles[:,1])
+    @showprogress 1 "Computing RDF..." for CentralP in 1:length(Particles[:,1])
 
         # local Gr around the current particle
         Local_Gr = zeros(length(r))
@@ -247,7 +248,7 @@ function RDF_AnalyticNorm(Particles::Matrix{Float64}, r, dr)
         # save in the global g(r) for the average over particles
         Global_Gr .= Global_Gr + Local_Gr
 
-        println("Finished Particle $CentralP of $(length(Particles[:,1]))")
+        # println("Finished Particle $CentralP of $(length(Particles[:,1]))")
     end
 
     # final normalization considering the non empty shell volumes
