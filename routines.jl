@@ -194,10 +194,13 @@ function RDF_AnalyticNorm(Particles::Matrix{Float64}, r, dr)
     MeanDensity = length(Particles[:,1]) / (Lx * Ly * Lz)
 
     # use every particle as the center once
-    @showprogress 1 "Computing RDF..." for CentralP in 1:length(Particles[:,1])
+    p = Progress(length(Particles[:,1]), dt=1.0)
+    # @showprogress 1 "Computing RDF..."
+    Threads.@threads for CentralP in 1:length(Particles[:,1])
 
         # local Gr around the current particle
         Local_Gr = zeros(length(r))
+        Local_NonEmptyShells = zeros(length(r))
 
         # look at every other particle at most MaxDist away:
         for Neighbour in 1:length(Particles[:,1])
@@ -216,10 +219,8 @@ function RDF_AnalyticNorm(Particles::Matrix{Float64}, r, dr)
 
                 # add one to every bin the particle is in
                 for Pos in IdxList
-
                     # count the particle
                     Local_Gr[Pos] += 1
-
                 end
             end
         end
@@ -238,18 +239,26 @@ function RDF_AnalyticNorm(Particles::Matrix{Float64}, r, dr)
             # check for safety
             if SVolume > 0.0
                 Local_Gr[RIdx] /= SVolume
-                NonEmptyShells[RIdx] += 1
+                Local_NonEmptyShells[RIdx] += 1
             end
         end
 
         # normalize by the mean particle density
         Local_Gr .= Local_Gr / MeanDensity
-        
+
         # save in the global g(r) for the average over particles
-        Global_Gr .= Global_Gr + Local_Gr
+        Threads.@sync begin
+            Threads.@threads for i in eachindex(Global_Gr)
+                Global_Gr[i] += Local_Gr[i]
+                NonEmptyShells[i] += Local_NonEmptyShells[i]
+            end
+        end
 
         # println("Finished Particle $CentralP of $(length(Particles[:,1]))")
+        next!(p)
     end
+    
+    finish!(p)
 
     # final normalization considering the non empty shell volumes
     for k = 1:length(Global_Gr)
