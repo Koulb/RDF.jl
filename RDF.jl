@@ -12,7 +12,9 @@ normalization procedure
 RMax = 100 # maximal radial distance
 DeltaR = 0.2 # bin width
 NBins = 1000 # number of equally spaced bins
-ParticleFile = "test/test.dat"
+InOutDir = "test/"
+InitailData = InOutDir * "blobs_expBSA_19_Position_1_SIRT20i_1n.inv.csv"
+ParticleFile = InOutDir * "test.dat"
 SimuName = ParticleFile[1:end-4]
 
 function readPartCoor(PartFile)
@@ -82,10 +84,16 @@ function ProcessPartCoor(PartFile, rList, DeltaR, SimuName)
 	return true
 end
 
-#create the list with radial distances
+# Perform rotation of data 
+println("Performing rotation of data...")
+args = InitailData * " " * ParticleFile
+run(`python rotate_axes.py $args`)
+println("Rotation complete")
 
+#create the list with radial distances
 rList = range(0, stop=RMax, length=NBins)
 
+println("Computing RDF:")
 ProcessPartCoor(ParticleFile, rList, DeltaR, SimuName)
 
 println("Program Finished")
